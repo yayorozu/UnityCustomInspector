@@ -4,15 +4,17 @@ using UnityEditor;
 namespace UniLib
 {
 	[CustomEditor(typeof(Transform))]
+	[CanEditMultipleObjects]
 	public class InspectorExtensionTransform : Editor
 	{
 		private Editor _transformEditor;
+		private Transform _transform;
 
 		private void OnEnable()
 		{
 			var type = typeof(EditorApplication).Assembly.GetType("UnityEditor.TransformInspector");
-			var transform = target as Transform;
-			_transformEditor = CreateEditor(transform, type);
+			_transform = target as Transform;
+			_transformEditor = CreateEditor(_transform, type);
 		}
 
 		private void OnDisable()
@@ -24,44 +26,51 @@ namespace UniLib
 		{
 			_transformEditor.OnInspectorGUI();
 
-			var transform = target as Transform;
-			GUI.enabled = false;
-			EditorGUILayout.LabelField("World (Read Only)");
-			EditorGUILayout.Vector3Field("Position", transform.position);
-			EditorGUILayout.Vector3Field("Rotation", transform.rotation.eulerAngles);
-			EditorGUILayout.Vector3Field("Scale", transform.lossyScale);
-			GUI.enabled = true;
+			using (new EditorGUI.DisabledScope(true))
+			{
+				EditorGUILayout.LabelField("World (Read Only)");
+				EditorGUILayout.Vector3Field("Position", _transform.position);
+				EditorGUILayout.Vector3Field("Rotation", _transform.rotation.eulerAngles);
+				EditorGUILayout.Vector3Field("Scale", _transform.lossyScale);
+			}
+			
 			using (new GUILayout.HorizontalScope())
 			{
-				var compositeScale = transform.lossyScale.x;
+				var compositeScale = _transform.localScale.x;
 				EditorGUI.BeginChangeCheck();
-				compositeScale = EditorGUILayout.FloatField("Scale", compositeScale);
-				if (EditorGUI.EndChangeCheck())
+				using (var check = new EditorGUI.ChangeCheckScope())
 				{
-					var scale = transform.localScale;
-					scale.x = compositeScale;
-					scale.y = compositeScale;
-					scale.z = compositeScale;
-					transform.localScale = scale;
+					compositeScale = EditorGUILayout.FloatField("Scale", compositeScale);
+					if (check.changed)
+					{
+						foreach (var obj in Selection.gameObjects)
+							obj.transform.localScale = Vector3.one * compositeScale;
+					}
 				}
 			}
 
 			using (new GUILayout.HorizontalScope())
 			{
 				GUILayout.Label("Reset");
-				if (GUILayout.Button("All", GUILayout.Height(23)))
+				if (GUILayout.Button("All", EditorStyles.toolbarButton))
 				{
-					transform.localPosition = Vector3.zero;
-					transform.localRotation = Quaternion.identity;
-					transform.localScale = Vector3.one;
+					foreach (var obj in Selection.gameObjects)
+					{
+						obj.transform.localPosition = Vector3.zero;
+						obj.transform.localRotation = Quaternion.identity;
+						obj.transform.localScale = Vector3.one;
+					}
 				}
 
-				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_MoveTool.png") as Texture2D)))
-					transform.localPosition = Vector3.zero;
-				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_RotateTool.png") as Texture2D)))
-					transform.localRotation = Quaternion.identity;
-				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_ScaleTool.png") as Texture2D)))
-					transform.localScale = Vector3.one;
+				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_MoveTool.png") as Texture2D), EditorStyles.toolbarButton))
+					foreach (var obj in Selection.gameObjects)
+						obj.transform.localPosition = Vector3.zero;
+				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_RotateTool.png") as Texture2D), EditorStyles.toolbarButton))
+					foreach (var obj in Selection.gameObjects) 
+						obj.transform.localRotation = Quaternion.identity;
+				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_ScaleTool.png") as Texture2D), EditorStyles.toolbarButton))
+					foreach (var obj in Selection.gameObjects)
+						obj.transform.localScale = Vector3.one;
 			}
 		}
 	}
