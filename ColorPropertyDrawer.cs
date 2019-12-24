@@ -1,12 +1,12 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace UniLib.UniAttribute
+namespace UniLib
 {
 	[CustomPropertyDrawer(typeof(Color))]
 	public class ColorPropertyDrawer : PropertyDrawer
 	{
-		private SerializedProperty _r, _g, _b, _a;
+		private SerializedProperty _red, _green, _blue, _alpha;
 		private Color _color;
 		private bool _cache;
 		private string _colorStr;
@@ -16,66 +16,86 @@ namespace UniLib.UniAttribute
 			if (!_cache)
 			{
 				property.Next(true);
-				_r = property.Copy();
+				_red = property.Copy();
 				property.Next(true);
-				_g = property.Copy();
+				_green = property.Copy();
 				property.Next(true);
-				_b = property.Copy();
+				_blue = property.Copy();
 				property.Next(true);
-				_a = property.Copy();
+				_alpha = property.Copy();
 				_cache = true;
 			}
 
 			position.height = EditorGUIUtility.singleLineHeight;
 			EditorGUI.LabelField(position, property.displayName);
 
-			EditorGUI.BeginChangeCheck();
-			_color = EditorGUI.ColorField(
-				new Rect(position.width / 2 + 5, position.y, position.width / 2 + 5, EditorGUIUtility.singleLineHeight),
-				new Color(_r.floatValue, _g.floatValue, _b.floatValue, _a.floatValue));
-			if (EditorGUI.EndChangeCheck())
+			using (var check = new EditorGUI.ChangeCheckScope())
 			{
-				_r.floatValue = _color.r;
-				_g.floatValue = _color.g;
-				_b.floatValue = _color.b;
-				_a.floatValue = _color.a;
+				_color = EditorGUI.ColorField(
+					new Rect(position.width / 2 + 5, position.y, position.width / 2 + 5, EditorGUIUtility.singleLineHeight),
+					new Color(_red.floatValue, _green.floatValue, _blue.floatValue, _alpha.floatValue));
+				if (check.changed)
+				{
+					_red.floatValue = _color.r;
+					_green.floatValue = _color.g;
+					_blue.floatValue = _color.b;
+					_alpha.floatValue = _color.a;
+				}
 			}
 
 			property.isExpanded = EditorGUI.Foldout(position, property.isExpanded, GUIContent.none);
 			if (!property.isExpanded)
 				return;
-			
-			EditorGUI.indentLevel++;
-			{
-				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-				EditorGUI.Slider(position, _r, 0f, 1f, "red");
-				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-				EditorGUI.Slider(position, _g, 0f, 1f, "green");
-				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-				EditorGUI.Slider(position, _b, 0f, 1f, "blue");
-				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-				EditorGUI.Slider(position, _a, 0f, 1f, "alpha");
-			}
 
-			using (new EditorGUI.DisabledScope())
+			using (new EditorGUI.IndentLevelScope(1))
 			{
-				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-				EditorGUI.BeginChangeCheck();
-				_colorStr = EditorGUI.TextField(position, "Color Code",
-					ColorUtility.ToHtmlStringRGB(new Color(_r.floatValue, _g.floatValue, _b.floatValue, _a.floatValue)));
-				if (EditorGUI.EndChangeCheck())
+				using (var check = new EditorGUI.ChangeCheckScope())
 				{
-					var c = Color.white;
-					if (ColorUtility.TryParseHtmlString("#" + _colorStr, out c))
+					position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+					var r = _red.floatValue;
+					r = EditorGUI.Slider(position, "red", r, 0f, 1f);
+					position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+					var g = _green.floatValue;
+					g = EditorGUI.Slider(position, "green", g, 0f, 1f);
+					position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+					var b = _blue.floatValue;
+					b = EditorGUI.Slider(position, "blue", b, 0f, 1f);
+					if (check.changed)
 					{
-						_r.floatValue = c.r;
-						_g.floatValue = c.g;
-						_b.floatValue = c.b;
+						_red.floatValue = r;
+						_green.floatValue = g;
+						_blue.floatValue = b;
+					}
+				}
+				
+				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+				using (var check = new EditorGUI.ChangeCheckScope())
+				{
+					var a = _alpha.floatValue;
+					a = EditorGUI.Slider(position, "alpha", a, 0f, 1f);
+					if (check.changed)
+					{
+						_alpha.floatValue = a;
+					}
+				}
+				using (new EditorGUI.DisabledScope())
+				{
+					position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+					using (var check = new EditorGUI.ChangeCheckScope())
+					{
+						_colorStr = EditorGUI.TextField(position, "Color Code", ColorUtility.ToHtmlStringRGB(new Color(_red.floatValue, _green.floatValue, _blue.floatValue, _alpha.floatValue)));
+						if (check.changed)
+						{
+							if (ColorUtility.TryParseHtmlString("#" + _colorStr, out var color))
+							{
+								_red.floatValue = color.r;
+								_green.floatValue = color.g;
+								_blue.floatValue = color.b;
+							}
+						}
 					}
 				}
 			}
-
-			EditorGUI.indentLevel--;
 		}
 
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)

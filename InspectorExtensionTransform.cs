@@ -5,39 +5,26 @@ namespace UniLib
 {
 	[CustomEditor(typeof(Transform))]
 	[CanEditMultipleObjects]
-	public class InspectorExtensionTransform : Editor
+	public class InspectorExtensionTransform : InternalEditorExtensionAbstract<Transform>
 	{
-		private Editor _transformEditor;
-		private Transform _transform;
-
-		private void OnEnable()
+		protected override string GetType()
 		{
-			var type = typeof(EditorApplication).Assembly.GetType("UnityEditor.TransformInspector");
-			_transform = target as Transform;
-			_transformEditor = CreateEditor(_transform, type);
+			return "UnityEditor.TransformInspector";
 		}
 
-		private void OnDisable()
+		protected override void InspectorGUI()
 		{
-			DestroyImmediate(_transformEditor);
-		}
-
-		public override void OnInspectorGUI()
-		{
-			_transformEditor.OnInspectorGUI();
-
 			using (new EditorGUI.DisabledScope(true))
 			{
 				EditorGUILayout.LabelField("World (Read Only)");
-				EditorGUILayout.Vector3Field("Position", _transform.position);
-				EditorGUILayout.Vector3Field("Rotation", _transform.rotation.eulerAngles);
-				EditorGUILayout.Vector3Field("Scale", _transform.lossyScale);
+				EditorGUILayout.Vector3Field("Position", targetComponent.position);
+				EditorGUILayout.Vector3Field("Rotation", targetComponent.rotation.eulerAngles);
+				EditorGUILayout.Vector3Field("Scale", targetComponent.lossyScale);
 			}
 			
 			using (new GUILayout.HorizontalScope())
 			{
-				var compositeScale = _transform.localScale.x;
-				EditorGUI.BeginChangeCheck();
+				var compositeScale = targetComponent.localScale.x;
 				using (var check = new EditorGUI.ChangeCheckScope())
 				{
 					compositeScale = EditorGUILayout.FloatField("Scale", compositeScale);

@@ -4,80 +4,76 @@ using UnityEditor;
 namespace UniLib
 {
 	[CustomEditor(typeof(RectTransform))]
-	public class InspectorExtensionRectTransform : Editor
+	[CanEditMultipleObjects]
+	public class InspectorExtensionRectTransform : InternalEditorExtensionAbstract<RectTransform>
 	{
-		private Editor _rectTransformEditor;
-
-		private void OnEnable()
+		protected override string GetType()
 		{
-			var type = typeof(EditorApplication).Assembly.GetType("UnityEditor.RectTransformEditor");
-			var rectTransform = target as RectTransform;
-			_rectTransformEditor = CreateEditor(rectTransform, type);
+			return "UnityEditor.RectTransformEditor";
 		}
 
-		private void OnDisable()
+		protected override void InspectorGUI()
 		{
-			DestroyImmediate(_rectTransformEditor);
-		}
-
-		public override void OnInspectorGUI()
-		{
-			_rectTransformEditor.OnInspectorGUI();
-
-			var rectTransform = target as RectTransform;
-			GUI.enabled = false;
-			EditorGUILayout.LabelField("Read Only");
-			EditorGUILayout.Vector3Field("Position", rectTransform.transform.position);
-			EditorGUILayout.Vector3Field("Rotation", rectTransform.transform.rotation.eulerAngles);
-			EditorGUILayout.Vector3Field("Scale", rectTransform.transform.lossyScale);
-			EditorGUILayout.Vector3Field("LocalPosition", rectTransform.transform.localPosition);
-			EditorGUILayout.Vector2Field("Anchored Position", rectTransform.anchoredPosition);
-			EditorGUILayout.Vector2Field("SizeDelta", rectTransform.sizeDelta);
-			EditorGUILayout.RectField("Rect", rectTransform.rect);
-			GUI.enabled = true;
-
-			using (new GUILayout.HorizontalScope())
+			using (new EditorGUI.DisabledScope(true))
 			{
-				GUILayout.Label("Reset");
-				if (GUILayout.Button("All", GUILayout.Height(23)))
-				{
-					rectTransform.localPosition = Vector3.zero;
-					rectTransform.localRotation = Quaternion.identity;
-					rectTransform.localScale = Vector3.one;
-				}
-
-				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_MoveTool.png") as Texture2D)))
-					rectTransform.localPosition = Vector3.zero;
-				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_RotateTool.png") as Texture2D)))
-					rectTransform.localRotation = Quaternion.identity;
-				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_ScaleTool.png") as Texture2D)))
-					rectTransform.localScale = Vector3.one;
+				EditorGUILayout.LabelField("Read Only");
+				EditorGUILayout.Vector3Field("Position", targetComponent.transform.position);
+				EditorGUILayout.Vector3Field("Rotation", targetComponent.transform.rotation.eulerAngles);
+				EditorGUILayout.Vector3Field("Scale", targetComponent.transform.lossyScale);
+				EditorGUILayout.Vector3Field("LocalPosition", targetComponent.transform.localPosition);
+				EditorGUILayout.Vector2Field("Anchored Position", targetComponent.anchoredPosition);
+				EditorGUILayout.Vector2Field("SizeDelta", targetComponent.sizeDelta);
+				EditorGUILayout.RectField("Rect", targetComponent.rect);
 			}
 
 			using (new GUILayout.HorizontalScope())
 			{
-				if (GUILayout.Button("↖"))
-					SetAnchor(RectAnchor.TopLeft, rectTransform);
-				if (GUILayout.Button("↗"))
-					SetAnchor(RectAnchor.TopRight, rectTransform);
-				if (GUILayout.Button("↙"))
-					SetAnchor(RectAnchor.BottomLeft, rectTransform);
-				if (GUILayout.Button("↘"))
-					SetAnchor(RectAnchor.BottomRight, rectTransform);
-
-				if (GUILayout.Button("↑↔"))
-					SetAnchorFit(RectAnchor.TopFit, rectTransform);
-				if (GUILayout.Button("↓↔"))
-					SetAnchorFit(RectAnchor.BottomFit, rectTransform);
-				if (GUILayout.Button("←↕"))
-					SetAnchorFit(RectAnchor.LeftFit, rectTransform);
-				if (GUILayout.Button("→↕"))
-					SetAnchorFit(RectAnchor.RightFit, rectTransform);
-				if (GUILayout.Button("↔↕"))
+				GUILayout.Label("Reset");
+				if (GUILayout.Button("All", EditorStyles.toolbarButton))
 				{
-					var parent = rectTransform.parent as RectTransform;
-					rectTransform.SetSizeDelta(parent.sizeDelta);
-					rectTransform.SetAnchoredPosition(Vector2.zero);
+					foreach (var t in targets)
+					{
+						((RectTransform) t).localPosition = Vector3.zero;
+						((RectTransform) t).localRotation = Quaternion.identity;
+						((RectTransform) t).localScale = Vector3.one;
+					}
+				}
+
+				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_MoveTool.png") as Texture2D), EditorStyles.toolbarButton))
+					foreach (var t in targets)
+						((RectTransform) t).localPosition = Vector3.zero;
+				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_RotateTool.png") as Texture2D), EditorStyles.toolbarButton))
+					foreach (var t in targets)
+						((RectTransform) t).localRotation = Quaternion.identity;
+				if (GUILayout.Button(new GUIContent(EditorGUIUtility.Load("icons/d_ScaleTool.png") as Texture2D), EditorStyles.toolbarButton))
+					foreach (var t in targets)
+						((RectTransform) t).localScale = Vector3.one;
+			}
+
+			using (new GUILayout.HorizontalScope())
+			{
+				if (GUILayout.Button("↖", EditorStyles.toolbarButton))
+					SetAnchor(RectAnchor.TopLeft, targetComponent);
+				if (GUILayout.Button("↗", EditorStyles.toolbarButton))
+					SetAnchor(RectAnchor.TopRight, targetComponent);
+				if (GUILayout.Button("↙", EditorStyles.toolbarButton))
+					SetAnchor(RectAnchor.BottomLeft, targetComponent);
+				if (GUILayout.Button("↘", EditorStyles.toolbarButton))
+					SetAnchor(RectAnchor.BottomRight, targetComponent);
+
+				if (GUILayout.Button("↑↔", EditorStyles.toolbarButton))
+					SetAnchorFit(RectAnchor.TopFit, targetComponent);
+				if (GUILayout.Button("↓↔", EditorStyles.toolbarButton))
+					SetAnchorFit(RectAnchor.BottomFit, targetComponent);
+				if (GUILayout.Button("←↕", EditorStyles.toolbarButton))
+					SetAnchorFit(RectAnchor.LeftFit, targetComponent);
+				if (GUILayout.Button("→↕", EditorStyles.toolbarButton))
+					SetAnchorFit(RectAnchor.RightFit, targetComponent);
+				if (GUILayout.Button("↔↕", EditorStyles.toolbarButton))
+				{
+					var parent = targetComponent.parent as RectTransform;
+					targetComponent.SetSizeDelta(parent.sizeDelta);
+					targetComponent.SetAnchoredPosition(Vector2.zero);
 				}
 			}
 		}
