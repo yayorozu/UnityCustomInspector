@@ -9,11 +9,11 @@ namespace UniLib
 		private Editor _editor;
 		protected T targetComponent;
 
-		protected abstract string GetType();
+		protected abstract string GetTypeName();
 		
 		private void OnEnable()
 		{
-			var type = typeof(EditorApplication).Assembly.GetType(GetType());
+			var type = typeof(EditorApplication).Assembly.GetType(GetTypeName());
 			targetComponent = target as T;
 			_editor = CreateEditor(targetComponent, type);
 			Enable();

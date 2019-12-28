@@ -7,7 +7,7 @@ namespace UniLib
 	[CanEditMultipleObjects]
 	public class InspectorExtensionRectTransform : InternalEditorExtensionAbstract<RectTransform>
 	{
-		protected override string GetType()
+		protected override string GetTypeName()
 		{
 			return "UnityEditor.RectTransformEditor";
 		}
