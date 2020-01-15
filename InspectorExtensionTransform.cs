@@ -76,6 +76,12 @@ namespace UniLib
 			if (_Contents == null)
 				_Contents = new Contents();
 			
+			if (!EditorGUIUtility.wideMode)
+			{
+				EditorGUIUtility.wideMode = true;
+				EditorGUIUtility.labelWidth = EditorGUIUtility.currentViewWidth - 212f;
+			}
+			serializedObject.Update();
 			EditorGUILayout.PropertyField(_positionProperty);
 			
 			_rotationFieldMethod.Invoke(_transformRotationGUIObject, null);
@@ -89,8 +95,7 @@ namespace UniLib
 				EditorGUILayout.Vector3Field("Rotation", _transform.rotation.eulerAngles);
 				EditorGUILayout.Vector3Field("Scale", _transform.lossyScale);
 			}
-			
-			
+
 			using (new GUILayout.HorizontalScope())
 			{
 				EditorGUILayout.PrefixLabel("Reset");
@@ -112,6 +117,8 @@ namespace UniLib
 					foreach (var obj in Selection.gameObjects)
 						obj.transform.localScale = Vector3.one;
 			}
+			
+			serializedObject.ApplyModifiedProperties();
 		}
 	}
 }
