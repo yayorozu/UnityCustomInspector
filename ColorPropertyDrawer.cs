@@ -6,41 +6,39 @@ namespace UniLib
 	[CustomPropertyDrawer(typeof(Color))]
 	public class ColorPropertyDrawer : PropertyDrawer
 	{
-		private SerializedProperty _red, _green, _blue, _alpha;
-		private Color _color;
-		private bool _cache;
+		private const int ColorMax = 4;
+		private SerializedProperty[] _rgba;
+		private Color _color = new Color();
+		private bool _isCached;
 		private string _colorStr;
+		private static readonly string[] Labels = {
+			"Red", "Green", "Blue", "Alpha"
+		};
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
-			if (!_cache)
+			if (!_isCached)
 			{
-				property.Next(true);
-				_red = property.Copy();
-				property.Next(true);
-				_green = property.Copy();
-				property.Next(true);
-				_blue = property.Copy();
-				property.Next(true);
-				_alpha = property.Copy();
-				_cache = true;
+				_rgba = new SerializedProperty[ColorMax];
+				_rgba[0] = property.FindPropertyRelative("r");
+				_rgba[1] = property.FindPropertyRelative("g");
+				_rgba[2] = property.FindPropertyRelative("b");
+				_rgba[3] = property.FindPropertyRelative("a");
+				_isCached = true;
 			}
 
 			position.height = EditorGUIUtility.singleLineHeight;
-			EditorGUI.LabelField(position, property.displayName);
-
+			
 			using (var check = new EditorGUI.ChangeCheckScope())
 			{
-				_color = EditorGUI.ColorField(
-					new Rect(position.width / 2 + 5, position.y, position.width / 2 + 5, EditorGUIUtility.singleLineHeight),
-					new Color(_red.floatValue, _green.floatValue, _blue.floatValue, _alpha.floatValue));
+				for (var i = 0; i < ColorMax; i++)
+					_color[i] = _rgba[i].floatValue;
+				
+				_color = EditorGUI.ColorField(position, label, _color);
+				
 				if (check.changed)
-				{
-					_red.floatValue = _color.r;
-					_green.floatValue = _color.g;
-					_blue.floatValue = _color.b;
-					_alpha.floatValue = _color.a;
-				}
+					for (var i = 0; i < ColorMax; i++)
+						_rgba[i].floatValue = _color[i];
 			}
 
 			property.isExpanded = EditorGUI.Foldout(position, property.isExpanded, GUIContent.none);
@@ -51,49 +49,28 @@ namespace UniLib
 			{
 				using (var check = new EditorGUI.ChangeCheckScope())
 				{
-					position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-					var r = _red.floatValue;
-					r = EditorGUI.Slider(position, "red", r, 0f, 1f);
-					position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-					var g = _green.floatValue;
-					g = EditorGUI.Slider(position, "green", g, 0f, 1f);
-					position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-					var b = _blue.floatValue;
-					b = EditorGUI.Slider(position, "blue", b, 0f, 1f);
-					if (check.changed)
+					for (var i = 0; i < ColorMax; i++)
 					{
-						_red.floatValue = r;
-						_green.floatValue = g;
-						_blue.floatValue = b;
+						position.y += EditorGUIUtility.singleLineHeight;
+						_color[i] = _rgba[i].floatValue;
+						_color[i] = EditorGUI.Slider(position, Labels[i], _color[i], 0f, 1f);
 					}
+					if (check.changed)
+						for (var i = 0; i < ColorMax; i++)
+							_rgba[i].floatValue = _color[i];
 				}
-				
-				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+
+				position.y += EditorGUIUtility.singleLineHeight;
 				using (var check = new EditorGUI.ChangeCheckScope())
 				{
-					var a = _alpha.floatValue;
-					a = EditorGUI.Slider(position, "alpha", a, 0f, 1f);
+					for (var i = 0; i < ColorMax; i++)
+						_color[i] = _rgba[i].floatValue;
+					
+					_colorStr = EditorGUI.DelayedTextField(position, "HTML Color Code", ColorUtility.ToHtmlStringRGB(_color));
 					if (check.changed)
-					{
-						_alpha.floatValue = a;
-					}
-				}
-				using (new EditorGUI.DisabledScope())
-				{
-					position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-					using (var check = new EditorGUI.ChangeCheckScope())
-					{
-						_colorStr = EditorGUI.TextField(position, "Color Code", ColorUtility.ToHtmlStringRGB(new Color(_red.floatValue, _green.floatValue, _blue.floatValue, _alpha.floatValue)));
-						if (check.changed)
-						{
-							if (ColorUtility.TryParseHtmlString("#" + _colorStr, out var color))
-							{
-								_red.floatValue = color.r;
-								_green.floatValue = color.g;
-								_blue.floatValue = color.b;
-							}
-						}
-					}
+						if (ColorUtility.TryParseHtmlString("#" + _colorStr, out var color))
+							for (var i = 0; i < ColorMax - 1; i++)
+								_rgba[i].floatValue = color[i];
 				}
 			}
 		}
@@ -103,7 +80,7 @@ namespace UniLib
 			if (!property.isExpanded)
 				return EditorGUIUtility.singleLineHeight;
 			
-			return EditorGUIUtility.singleLineHeight * 6 + EditorGUIUtility.standardVerticalSpacing * 5;
+			return EditorGUIUtility.singleLineHeight * 6;
 		}
 	}
 }
