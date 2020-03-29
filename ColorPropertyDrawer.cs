@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace UniLib
+namespace Yorozu
 {
 	[CustomPropertyDrawer(typeof(Color))]
 	public class ColorPropertyDrawer : PropertyDrawer

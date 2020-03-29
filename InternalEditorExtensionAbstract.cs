@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace UniLib
+namespace Yorozu
 {
 	public abstract class InternalEditorExtensionAbstract<T> : Editor where T : Component
 	{

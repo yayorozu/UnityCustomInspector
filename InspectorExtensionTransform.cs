@@ -4,7 +4,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 
-namespace UniLib
+namespace Yorozu
 {
 	[CustomEditor(typeof(Transform))]
 	[CanEditMultipleObjects]
