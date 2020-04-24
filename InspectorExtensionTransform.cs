@@ -1,14 +1,11 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 
 namespace Yorozu
 {
 	[CustomEditor(typeof(Transform))]
 	[CanEditMultipleObjects]
-	public class InspectorExtensionTransform : Editor
+	public class InspectorExtensionTransform : InternalEditorExtensionAbstract<Transform>
 	{
 		private class Contents
 		{
@@ -37,88 +34,46 @@ namespace Yorozu
 		}
 
 		private static Contents _Contents;
-		private Type _transformRotationGUIType;
-		private System.Object _transformRotationGUIObject;
-		private MethodInfo _rotationFieldMethod;
-		private SerializedProperty _positionProperty;
-		private SerializedProperty _scaleProperty;
-		private Transform _transform;
 		
-		private void OnEnable()
+		protected override string GetTypeName()
 		{
-			_transform = target as Transform;
-			_positionProperty = serializedObject.FindProperty("m_LocalPosition");
-			_scaleProperty = serializedObject.FindProperty("m_LocalScale");
-			
-			_transformRotationGUIType = typeof(EditorApplication).Assembly.GetType("UnityEditor.TransformRotationGUI");
-			if (_transformRotationGUIObject == null)
-				_transformRotationGUIObject = Activator.CreateInstance(_transformRotationGUIType);
-			
-			var enableMethod = _transformRotationGUIType
-				.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)
-				.First(m => m.Name == "OnEnable");
-			
-			// Initialize TransformRotationGUI
-			enableMethod.Invoke(_transformRotationGUIObject, new object[]
-			{
-				serializedObject.FindProperty("m_LocalRotation"),
-				EditorGUIUtility.TrTextContent("Rotation")
-			});
-			
-			_rotationFieldMethod = _transformRotationGUIType
-				.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)
-				.Where(m => m.Name == "RotationField")
-				.FirstOrDefault(m => m.GetParameters().Length == 0);
+			return "UnityEditor.TransformInspector";
 		}
-
-		public override void OnInspectorGUI()
+        
+		protected override void InspectorGUI()
 		{
 			if (_Contents == null)
 				_Contents = new Contents();
-			
-			if (!EditorGUIUtility.wideMode)
-			{
-				EditorGUIUtility.wideMode = true;
-				EditorGUIUtility.labelWidth = EditorGUIUtility.currentViewWidth - 212f;
-			}
-			serializedObject.Update();
-			EditorGUILayout.PropertyField(_positionProperty);
-			
-			_rotationFieldMethod.Invoke(_transformRotationGUIObject, null);
-			
-			EditorGUILayout.PropertyField(_scaleProperty);
-			
+				
 			using (new EditorGUI.DisabledScope(true))
 			{
-				EditorGUILayout.LabelField("World (Read Only)");
-				EditorGUILayout.Vector3Field("Position", _transform.position);
-				EditorGUILayout.Vector3Field("Rotation", _transform.rotation.eulerAngles);
-				EditorGUILayout.Vector3Field("Scale", _transform.lossyScale);
+				EditorGUILayout.LabelField("World");
+				EditorGUILayout.Vector3Field("Position", component.position);
+				EditorGUILayout.Vector3Field("Rotation", component.rotation.eulerAngles);
+				EditorGUILayout.Vector3Field("Scale", component.lossyScale);
 			}
 
 			using (new GUILayout.HorizontalScope())
 			{
 				EditorGUILayout.PrefixLabel("Reset");
 				if (GUILayout.Button("All", EditorStyles.toolbarButton))
-					foreach (var obj in Selection.gameObjects)
+					foreach (var trans in components)
 					{
-						obj.transform.localPosition = Vector3.zero;
-						obj.transform.localRotation = Quaternion.identity;
-						obj.transform.localScale = Vector3.one;
+						trans.localPosition = Vector3.zero;
+						trans.localRotation = Quaternion.identity;
+						trans.localScale = Vector3.one;
 					}
 
 				if (GUILayout.Button(_Contents.PositionResetButton, EditorStyles.toolbarButton))
-					foreach (var obj in Selection.gameObjects)
-						obj.transform.localPosition = Vector3.zero;
+					foreach (var trans in components)
+						trans.localPosition = Vector3.zero;
 				if (GUILayout.Button(_Contents.RotationResetButton, EditorStyles.toolbarButton))
-					foreach (var obj in Selection.gameObjects)
-						obj.transform.localRotation = Quaternion.identity;
+					foreach (var trans in components)
+						trans.localRotation = Quaternion.identity;
 				if (GUILayout.Button(_Contents.ScaleResetButton, EditorStyles.toolbarButton))
-					foreach (var obj in Selection.gameObjects)
-						obj.transform.localScale = Vector3.one;
+					foreach (var trans in components)
+						trans.localScale = Vector3.one;
 			}
-			
-			serializedObject.ApplyModifiedProperties();
 		}
 	}
 }

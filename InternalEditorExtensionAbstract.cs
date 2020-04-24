@@ -1,5 +1,5 @@
+using System.Linq;
 using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
 
 namespace Yorozu
@@ -7,15 +7,16 @@ namespace Yorozu
 	public abstract class InternalEditorExtensionAbstract<T> : Editor where T : Component
 	{
 		private Editor _editor;
-		protected T targetComponent;
-
+		protected T component;
+		protected T[] components;
 		protected abstract string GetTypeName();
 		
 		private void OnEnable()
 		{
 			var type = typeof(EditorApplication).Assembly.GetType(GetTypeName());
-			targetComponent = target as T;
-			_editor = CreateEditor(targetComponent, type);
+			component = target as T;
+			components = targets.Cast<T>().ToArray();
+			_editor = CreateEditor(targets, type);
 			Enable();
 		}
 
@@ -27,16 +28,7 @@ namespace Yorozu
 		
 		public sealed override void OnInspectorGUI()
 		{
-			using (var check = new EditorGUI.ChangeCheckScope())
-			{
-				_editor.OnInspectorGUI();
-				if (check.changed && targets.Length > 1)
-				{
-					ComponentUtility.CopyComponent(targetComponent);
-					foreach (var o in targets)
-						ComponentUtility.PasteComponentValues(o as T);
-				}
-			}
+			_editor.OnInspectorGUI();
 			InspectorGUI();
 		}
 		
