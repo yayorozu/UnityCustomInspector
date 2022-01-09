@@ -8,7 +8,7 @@ public class InspectorExtensionCanvasRenderer : Editor
 
 	private void OnEnable()
 	{
-		var c =  target as CanvasRenderer;
+		var c = target as CanvasRenderer;
 		_orderInLayer = GetOrderInLayer(c.transform);
 	}
 
@@ -20,9 +20,9 @@ public class InspectorExtensionCanvasRenderer : Editor
 				return null;
 
 			var canvas = transform.GetComponent<Canvas>();
+			transform = transform.parent;
 			if (canvas == null)
 			{
-				transform = transform.transform.parent;
 				continue;
 			}
 
@@ -30,7 +30,7 @@ public class InspectorExtensionCanvasRenderer : Editor
 			{
 				return canvas.sortingOrder;
 			}
-
+			
 			if (canvas == canvas.rootCanvas)
 				return canvas.sortingOrder;
 		}
